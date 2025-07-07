@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
-import { ArrowLeft, DollarSign, MapPin, ImagePlus } from 'lucide-react';
+import { ArrowLeft, DollarSign, MapPin, ImagePlus, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const SPACE_TYPES = [
@@ -34,6 +34,7 @@ export default function CreateListing() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -59,6 +60,120 @@ export default function CreateListing() {
         ? [...prev.amenities, amenityId]
         : prev.amenities.filter(id => id !== amenityId)
     }));
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of Array.from(files)) {
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: `${file.name} is too large. Maximum size is 5MB.`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid file type",
+            description: `${file.name} is not an image file.`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `${user?.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('listing-images')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          toast({
+            title: "Upload failed",
+            description: `Failed to upload ${file.name}`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('listing-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrlData.publicUrl);
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...uploadedUrls]
+      }));
+
+      if (uploadedUrls.length > 0) {
+        toast({
+          title: "Images uploaded",
+          description: `Successfully uploaded ${uploadedUrls.length} image(s)`,
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast({
+        title: "Upload error",
+        description: "An error occurred while uploading images",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
+  const removeImage = async (imageUrl: string, index: number) => {
+    try {
+      // Extract file path from URL
+      const urlParts = imageUrl.split('/');
+      const filePath = urlParts.slice(-2).join('/'); // user_id/filename
+
+      // Delete from storage
+      const { error } = await supabase.storage
+        .from('listing-images')
+        .remove([filePath]);
+
+      if (error) {
+        console.error('Error deleting image:', error);
+      }
+
+      // Remove from form data
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+
+      toast({
+        title: "Image removed",
+        description: "Image has been deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error removing image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove image",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -368,17 +483,65 @@ export default function CreateListing() {
                   Photos
                 </CardTitle>
                 <CardDescription>
-                  Add photos of your space (coming soon)
+                  Add photos to showcase your space
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                  <ImagePlus className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    Photo upload functionality will be available soon.
-                    For now, your listing will use a default placeholder.
-                  </p>
+              <CardContent className="space-y-4">
+                {/* Upload Area */}
+                <div className="border-2 border-dashed border-muted rounded-lg p-6">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label htmlFor="image-upload" className="cursor-pointer">
+                    <div className="text-center">
+                      <ImagePlus className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                          {uploading ? 'Uploading...' : 'Click to upload images'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          PNG, JPG, GIF up to 5MB each. You can select multiple files.
+                        </p>
+                      </div>
+                    </div>
+                  </label>
                 </div>
+
+                {/* Image Preview Grid */}
+                {formData.images.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {formData.images.map((imageUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={imageUrl}
+                          alt={`Listing image ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeImage(imageUrl, index)}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {formData.images.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    No images uploaded yet. Add some photos to make your listing more attractive!
+                  </p>
+                )}
               </CardContent>
             </Card>
 
