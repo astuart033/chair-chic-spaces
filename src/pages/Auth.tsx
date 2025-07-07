@@ -55,7 +55,7 @@ export default function Auth() {
           <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mr-3">
             <Scissors className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold">ShearPlace</h1>
+          <h1 className="text-3xl font-bold">ShearSpace</h1>
         </div>
         
         <Card>
@@ -63,8 +63,8 @@ export default function Auth() {
             <CardTitle>{isSignUp ? 'Create Account' : 'Sign In'}</CardTitle>
             <CardDescription>
               {isSignUp 
-                ? 'Join ShearPlace to start booking spaces or listing your salon'
-                : 'Welcome back to ShearPlace'
+                ? 'Join ShearSpace to start booking spaces or listing your salon'
+                : 'Welcome back to ShearSpace'
               }
             </CardDescription>
           </CardHeader>

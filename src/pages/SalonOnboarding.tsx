@@ -159,7 +159,7 @@ export default function SalonOnboarding() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   <strong>How it works:</strong> You'll receive 90% of each booking payment directly to your bank account. 
-                  ShearPlace keeps 10% as a platform fee. Payments are processed securely through Stripe.
+                  ShearSpace keeps 10% as a platform fee. Payments are processed securely through Stripe.
                 </AlertDescription>
               </Alert>
 

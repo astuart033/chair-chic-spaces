@@ -247,7 +247,7 @@ const Index = () => {
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Join thousands of beauty professionals who trust ShearPlace
+              Join thousands of beauty professionals who trust ShearSpace
             </p>
             <div className="space-x-4">
               <Button onClick={() => navigate('/auth')} size="lg">
