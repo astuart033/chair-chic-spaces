@@ -42,21 +42,49 @@ serve(async (req) => {
     const bookingData: BookingRequest = await req.json();
     const { listingId, startDate, endDate, totalAmount, bookingType } = bookingData;
 
-    // Input validation
+    // Enhanced input validation
     if (!listingId || !startDate || !endDate || !totalAmount || !bookingType) {
       throw new Error("Missing required booking parameters");
     }
 
-    if (totalAmount <= 0) {
+    // Validate UUID format for listingId
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(listingId)) {
+      throw new Error("Invalid listing ID format");
+    }
+
+    // Validate amount is positive and reasonable (max $10,000)
+    if (totalAmount <= 0 || totalAmount > 1000000) {
       throw new Error("Invalid total amount");
     }
 
-    if (new Date(startDate) >= new Date(endDate)) {
-      throw new Error("Invalid date range");
+    // Validate date format and range
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    const now = new Date();
+    
+    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+      throw new Error("Invalid date format");
     }
 
+    if (startDateObj >= endDateObj) {
+      throw new Error("Start date must be before end date");
+    }
+
+    if (startDateObj < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+      throw new Error("Start date cannot be in the past");
+    }
+
+    // Validate booking type
     if (!['daily', 'weekly'].includes(bookingType)) {
       throw new Error("Invalid booking type");
+    }
+
+    // Validate booking duration (max 365 days)
+    const durationMs = endDateObj.getTime() - startDateObj.getTime();
+    const maxDurationMs = 365 * 24 * 60 * 60 * 1000;
+    if (durationMs > maxDurationMs) {
+      throw new Error("Booking duration cannot exceed 365 days");
     }
 
     // Get listing and salon owner details
@@ -74,6 +102,31 @@ serve(async (req) => {
       .single();
 
     if (listingError || !listing) throw new Error("Listing not found");
+
+    // Verify listing is available
+    if (!listing.available) {
+      throw new Error("Listing is not available for booking");
+    }
+
+    // Calculate expected amount and verify against provided amount
+    const dailyRate = listing.price_per_day;
+    const weeklyRate = listing.price_per_week;
+    const duration = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
+    
+    let expectedAmount: number;
+    if (bookingType === 'weekly' && weeklyRate && duration >= 7) {
+      const weeks = Math.floor(duration / 7);
+      const remainingDays = duration % 7;
+      expectedAmount = (weeks * weeklyRate) + (remainingDays * dailyRate);
+    } else {
+      expectedAmount = duration * dailyRate;
+    }
+
+    // Allow 1% tolerance for rounding differences
+    const tolerance = Math.max(1, Math.floor(expectedAmount * 0.01));
+    if (Math.abs(totalAmount - expectedAmount) > tolerance) {
+      throw new Error(`Amount mismatch: expected ${expectedAmount}, received ${totalAmount}`);
+    }
 
     const salonOwner = listing.profiles;
     if (!salonOwner.stripe_connect_onboarded || !salonOwner.stripe_connect_account_id) {
@@ -162,7 +215,18 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in create-connect-payment:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    
+    // Sanitize error messages for client
+    let clientMessage = "Payment creation failed";
+    if (error.message.includes("not found")) {
+      clientMessage = "Requested resource not found";
+    } else if (error.message.includes("Invalid")) {
+      clientMessage = error.message; // Safe to show validation errors
+    } else if (error.message.includes("not completed")) {
+      clientMessage = "Payment setup not completed";
+    }
+    
+    return new Response(JSON.stringify({ error: clientMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

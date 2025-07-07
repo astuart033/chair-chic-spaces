@@ -33,13 +33,19 @@ serve(async (req) => {
     let event: Stripe.Event;
 
     try {
+      const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+      if (!webhookSecret) {
+        console.error("STRIPE_WEBHOOK_SECRET not configured");
+        return new Response("Webhook not configured", { status: 500 });
+      }
+      
       event = stripe.webhooks.constructEvent(
         body,
         signature,
-        Deno.env.get("STRIPE_WEBHOOK_SECRET") || ""
+        webhookSecret
       );
     } catch (err) {
-      console.error("Webhook signature verification failed:", err);
+      console.error("Webhook signature verification failed:", err.message);
       return new Response("Invalid signature", { status: 400 });
     }
 
@@ -68,6 +74,35 @@ serve(async (req) => {
       if (session.payment_status !== "paid") {
         console.error("Payment not completed:", session.payment_status);
         return new Response("Payment not completed", { status: 400 });
+      }
+
+      // Check if booking already exists to prevent duplicates
+      const { data: existingBooking } = await supabaseService
+        .from('bookings')
+        .select('id')
+        .eq('stripe_payment_intent_id', session.payment_intent as string)
+        .single();
+
+      if (existingBooking) {
+        console.log("Booking already exists for payment intent:", session.payment_intent);
+        return new Response(JSON.stringify({ success: true, booking_id: existingBooking.id }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      // Validate booking data
+      if (!listing_id || !renter_id || !start_date || !end_date) {
+        console.error("Invalid booking data:", { listing_id, renter_id, start_date, end_date });
+        return new Response("Invalid booking data", { status: 400 });
+      }
+
+      // Validate dates
+      const startDateObj = new Date(start_date);
+      const endDateObj = new Date(end_date);
+      if (startDateObj >= endDateObj || startDateObj < new Date()) {
+        console.error("Invalid date range:", { start_date, end_date });
+        return new Response("Invalid date range", { status: 400 });
       }
 
       // Create the booking record

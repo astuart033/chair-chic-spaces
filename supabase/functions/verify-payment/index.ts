@@ -60,6 +60,23 @@ serve(async (req) => {
       });
     }
 
+    // Validate user owns this session by checking metadata
+    const sessionMetadata = session.metadata;
+    if (!sessionMetadata?.renter_id) {
+      throw new Error("Session metadata missing renter information");
+    }
+
+    // Verify the requesting user matches the session renter
+    const { data: userProfile } = await supabaseService
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!userProfile || userProfile.id !== sessionMetadata.renter_id) {
+      throw new Error("Unauthorized: Session does not belong to requesting user");
+    }
+
     // Check if booking already exists for this session
     const { data: existingBooking, error: bookingCheckError } = await supabaseService
       .from('bookings')
@@ -85,9 +102,18 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Payment verification error:", error);
+    
+    // Sanitize error messages to prevent information leakage
+    let clientMessage = "Payment verification failed";
+    if (error.message.includes("Unauthorized")) {
+      clientMessage = "Unauthorized access to payment session";
+    } else if (error.message.includes("Session not found")) {
+      clientMessage = "Payment session not found";
+    }
+    
     return new Response(JSON.stringify({ 
       verified: false,
-      error: error.message 
+      error: clientMessage
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
