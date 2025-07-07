@@ -12,6 +12,8 @@ import MyBookings from "./pages/MyBookings";
 import MyListings from "./pages/MyListings";
 import CreateListing from "./pages/CreateListing";
 import Profile from "./pages/Profile";
+import SalonOnboarding from "./pages/SalonOnboarding";
+import BookingSuccess from "./pages/BookingSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/my-bookings" element={<MyBookings />} />
             <Route path="/my-listings" element={<MyListings />} />
             <Route path="/create-listing" element={<CreateListing />} />
+            <Route path="/salon-onboarding" element={<SalonOnboarding />} />
+            <Route path="/booking-success" element={<BookingSuccess />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

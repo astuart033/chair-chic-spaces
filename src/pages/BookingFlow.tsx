@@ -117,33 +117,31 @@ export default function BookingFlow() {
     try {
       const totalAmount = calculateTotal();
       
-      const { data, error } = await supabase
-        .from('bookings')
-        .insert({
-          listing_id: listing.id,
-          renter_id: profile.id,
-          start_date: format(startDate, 'yyyy-MM-dd'),
-          end_date: format(endDate, 'yyyy-MM-dd'),
-          total_amount: totalAmount,
-          booking_type: bookingType,
-          status: 'pending'
-        })
-        .select()
-        .single();
+      // Create payment session with Stripe Connect
+      const { data, error } = await supabase.functions.invoke('create-connect-payment', {
+        body: {
+          listingId: listing.id,
+          startDate: format(startDate, 'yyyy-MM-dd'),
+          endDate: format(endDate, 'yyyy-MM-dd'),
+          totalAmount: totalAmount * 100, // Convert to cents
+          bookingType,
+        }
+      });
 
       if (error) throw error;
 
-      toast({
-        title: "Booking Request Sent!",
-        description: "Your booking request has been sent to the salon owner for approval.",
-      });
-      
-      navigate('/my-bookings');
+      if (data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No payment URL received');
+      }
+
     } catch (error: any) {
-      console.error('Error creating booking:', error);
+      console.error('Error creating payment:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to create booking",
+        title: "Payment Failed",
+        description: error.message || "Failed to create payment session",
         variant: "destructive",
       });
     } finally {
@@ -312,15 +310,15 @@ export default function BookingFlow() {
                 disabled={!startDate || !endDate || submitting}
                 className="flex-1"
               >
-                {submitting ? 'Processing...' : 'Request Booking'}
+                {submitting ? 'Processing...' : 'Pay & Book Now'}
               </Button>
             </div>
           </form>
 
           <div className="mt-6 p-4 bg-muted/30 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Note:</strong> This is a booking request. You won't be charged until the salon owner confirms your booking. 
-              Payment will be processed through our secure platform once confirmed.
+              <strong>Note:</strong> Payment is processed securely through Stripe. 90% goes directly to the salon owner, 
+              and 10% is our platform fee. You'll be redirected to complete payment.
             </p>
           </div>
         </div>

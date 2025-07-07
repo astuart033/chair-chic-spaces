@@ -82,6 +82,17 @@ export default function CreateListing() {
       return;
     }
 
+    // Check if salon owner has completed Stripe onboarding
+    if (profile.user_type === 'salon_owner' && !profile.stripe_connect_onboarded) {
+      toast({
+        title: "Payment Setup Required",
+        description: "Please complete your payment setup before creating listings.",
+        variant: "destructive",
+      });
+      navigate('/salon-onboarding');
+      return;
+    }
+
     setLoading(true);
 
     try {

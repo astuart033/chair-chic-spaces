@@ -145,6 +145,9 @@ export type Database = {
           id: string
           phone: string | null
           profile_image_url: string | null
+          stripe_connect_account_id: string | null
+          stripe_connect_details_submitted: boolean | null
+          stripe_connect_onboarded: boolean | null
           updated_at: string
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
@@ -157,6 +160,9 @@ export type Database = {
           id?: string
           phone?: string | null
           profile_image_url?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_connect_details_submitted?: boolean | null
+          stripe_connect_onboarded?: boolean | null
           updated_at?: string
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"]
@@ -169,6 +175,9 @@ export type Database = {
           id?: string
           phone?: string | null
           profile_image_url?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_connect_details_submitted?: boolean | null
+          stripe_connect_onboarded?: boolean | null
           updated_at?: string
           user_id?: string
           user_type?: Database["public"]["Enums"]["user_type"]

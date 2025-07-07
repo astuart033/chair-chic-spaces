@@ -35,12 +35,20 @@ export const Navbar = () => {
                 </Link>
                 {profile?.user_type === 'salon_owner' && (
                   <>
-                    <Link to="/my-listings" className="text-foreground hover:text-primary transition-colors">
-                      My Listings
-                    </Link>
-                    <Link to="/create-listing" className="text-foreground hover:text-primary transition-colors">
-                      Add Listing
-                    </Link>
+                    {!profile.stripe_connect_onboarded ? (
+                      <Link to="/salon-onboarding" className="text-yellow-600 hover:text-yellow-700 transition-colors font-medium">
+                        Complete Setup
+                      </Link>
+                    ) : (
+                      <>
+                        <Link to="/my-listings" className="text-foreground hover:text-primary transition-colors">
+                          My Listings
+                        </Link>
+                        <Link to="/create-listing" className="text-foreground hover:text-primary transition-colors">
+                          Add Listing
+                        </Link>
+                      </>
+                    )}
                   </>
                 )}
               </>

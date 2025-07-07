@@ -11,6 +11,9 @@ interface Profile {
   user_type: 'salon_owner' | 'renter';
   bio?: string;
   profile_image_url?: string;
+  stripe_connect_account_id?: string;
+  stripe_connect_onboarded?: boolean;
+  stripe_connect_details_submitted?: boolean;
 }
 
 interface AuthContextType {
