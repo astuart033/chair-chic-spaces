@@ -9,7 +9,167 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_type: string
+          created_at: string
+          end_date: string
+          id: string
+          listing_id: string
+          renter_id: string
+          start_date: string
+          status: string
+          stripe_payment_intent_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          booking_type: string
+          created_at?: string
+          end_date: string
+          id?: string
+          listing_id: string
+          renter_id: string
+          start_date: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          booking_type?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          listing_id?: string
+          renter_id?: string
+          start_date?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_renter_id_fkey"
+            columns: ["renter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          address: string
+          amenities: string[] | null
+          available: boolean
+          city: string
+          created_at: string
+          description: string
+          id: string
+          images: string[] | null
+          owner_id: string
+          price_per_day: number
+          price_per_week: number | null
+          space_type: string
+          state: string
+          title: string
+          updated_at: string
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          amenities?: string[] | null
+          available?: boolean
+          city: string
+          created_at?: string
+          description: string
+          id?: string
+          images?: string[] | null
+          owner_id: string
+          price_per_day: number
+          price_per_week?: number | null
+          space_type: string
+          state: string
+          title: string
+          updated_at?: string
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          amenities?: string[] | null
+          available?: boolean
+          city?: string
+          created_at?: string
+          description?: string
+          id?: string
+          images?: string[] | null
+          owner_id?: string
+          price_per_day?: number
+          price_per_week?: number | null
+          space_type?: string
+          state?: string
+          title?: string
+          updated_at?: string
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          profile_image_url: string | null
+          updated_at: string
+          user_id: string
+          user_type: Database["public"]["Enums"]["user_type"]
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          profile_image_url?: string | null
+          updated_at?: string
+          user_id: string
+          user_type: Database["public"]["Enums"]["user_type"]
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          profile_image_url?: string | null
+          updated_at?: string
+          user_id?: string
+          user_type?: Database["public"]["Enums"]["user_type"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +178,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_type: "salon_owner" | "renter"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +293,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_type: ["salon_owner", "renter"],
+    },
   },
 } as const
