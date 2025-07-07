@@ -7,15 +7,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/Navbar';
-import { User, Phone, Mail, MapPin, Camera, Save, ArrowLeft } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Camera, Save, ArrowLeft, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export default function Profile() {
   const { user, profile, updateProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [switchingType, setSwitchingType] = useState(false);
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
     phone: profile?.phone || '',
@@ -45,6 +48,48 @@ export default function Profile() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAccountTypeSwitch = async () => {
+    if (!profile) return;
+    
+    setSwitchingType(true);
+    const newUserType = profile.user_type === 'salon_owner' ? 'renter' : 'salon_owner';
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          user_type: newUserType,
+          // Reset Stripe fields when switching to renter
+          ...(newUserType === 'renter' && {
+            stripe_connect_account_id: null,
+            stripe_connect_onboarded: false,
+            stripe_connect_details_submitted: false
+          })
+        })
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Account Type Updated",
+        description: `Successfully switched to ${newUserType === 'salon_owner' ? 'Salon Owner' : 'Beauty Professional'}`,
+      });
+      
+      // Refresh the page to update the UI and context
+      window.location.reload();
+      
+    } catch (error: any) {
+      console.error('Error switching account type:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to switch account type",
+        variant: "destructive",
+      });
+    } finally {
+      setSwitchingType(false);
     }
   };
 
@@ -206,20 +251,36 @@ export default function Profile() {
                   <div>
                     <p className="font-medium">Account Type</p>
                     <p className="text-sm text-muted-foreground">
-                      {profile.user_type === 'salon_owner' ? 'Salon Owner' : 'Beauty Professional'}
+                      {profile.user_type === 'salon_owner' ? 'Salon Owner - Create and manage listings' : 'Beauty Professional - Book salon spaces'}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      toast({
-                        title: "Coming Soon",
-                        description: "Account type switching will be available soon!",
-                      });
-                    }}
-                  >
-                    Switch Type
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" disabled={switchingType}>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        {switchingType ? 'Switching...' : 'Switch Type'}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Switch Account Type</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to switch to {profile.user_type === 'salon_owner' ? 'Beauty Professional' : 'Salon Owner'}?
+                          {profile.user_type === 'salon_owner' && (
+                            <span className="block mt-2 text-destructive">
+                              Warning: This will reset your Stripe onboarding status and you'll need to complete it again if you switch back to Salon Owner.
+                            </span>
+                          )}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleAccountTypeSwitch}>
+                          Switch Account Type
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
                 
                 <div className="flex justify-between items-center py-2 border-t">
