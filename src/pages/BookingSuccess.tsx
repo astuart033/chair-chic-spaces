@@ -13,7 +13,10 @@ export default function BookingSuccess() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [bookingDetails, setBookingDetails] = useState<any>(null);
   
   const sessionId = searchParams.get('session_id');
 
@@ -28,9 +31,55 @@ export default function BookingSuccess() {
       return;
     }
 
-    // Here you could verify the payment with Stripe if needed
-    // For now, we'll show the success message
+    verifyPayment();
   }, [user, sessionId]);
+
+  const verifyPayment = async () => {
+    if (!sessionId) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-payment', {
+        body: { session_id: sessionId }
+      });
+
+      if (error) throw error;
+
+      if (data.verified) {
+        setPaymentVerified(true);
+        setBookingDetails(data);
+        
+        if (!data.booking_exists) {
+          toast({
+            title: "Payment Verified",
+            description: "Your payment was successful. Booking details are being processed.",
+          });
+        } else {
+          toast({
+            title: "Booking Confirmed!",
+            description: "Your payment was successful and booking has been confirmed.",
+          });
+        }
+      } else {
+        setVerificationError(data.message || "Payment verification failed");
+        toast({
+          title: "Payment Issue",
+          description: data.message || "There was an issue verifying your payment.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Payment verification error:', error);
+      setVerificationError(error.message);
+      toast({
+        title: "Verification Error",
+        description: "Unable to verify payment. Please contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateBooking = async () => {
     if (!sessionId) return;
@@ -59,6 +108,47 @@ export default function BookingSuccess() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="animate-pulse">
+              <div className="w-16 h-16 bg-muted rounded-full mx-auto mb-4"></div>
+              <div className="h-8 bg-muted rounded w-3/4 mx-auto mb-2"></div>
+              <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (verificationError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="mb-8">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-red-600 dark:text-red-400 text-2xl">⚠</span>
+              </div>
+              <h1 className="text-3xl font-bold mb-2">Payment Verification Failed</h1>
+              <p className="text-muted-foreground">
+                {verificationError}
+              </p>
+            </div>
+            <Button onClick={() => navigate('/')} variant="outline">
+              Back to Home
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -67,9 +157,14 @@ export default function BookingSuccess() {
         <div className="max-w-2xl mx-auto text-center">
           <div className="mb-8">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Payment Successful!</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              {paymentVerified ? "Payment Verified!" : "Payment Successful!"}
+            </h1>
             <p className="text-muted-foreground">
-              Your booking has been confirmed and payment processed successfully.
+              {bookingDetails?.booking_exists 
+                ? "Your booking has been confirmed and payment processed successfully."
+                : "Your payment was successful. Booking confirmation is being processed."
+              }
             </p>
           </div>
 

@@ -42,6 +42,23 @@ serve(async (req) => {
     const bookingData: BookingRequest = await req.json();
     const { listingId, startDate, endDate, totalAmount, bookingType } = bookingData;
 
+    // Input validation
+    if (!listingId || !startDate || !endDate || !totalAmount || !bookingType) {
+      throw new Error("Missing required booking parameters");
+    }
+
+    if (totalAmount <= 0) {
+      throw new Error("Invalid total amount");
+    }
+
+    if (new Date(startDate) >= new Date(endDate)) {
+      throw new Error("Invalid date range");
+    }
+
+    if (!['daily', 'weekly'].includes(bookingType)) {
+      throw new Error("Invalid booking type");
+    }
+
     // Get listing and salon owner details
     const { data: listing, error: listingError } = await supabaseService
       .from('listings')
