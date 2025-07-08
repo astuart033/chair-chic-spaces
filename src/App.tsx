@@ -14,6 +14,7 @@ import CreateListing from "./pages/CreateListing";
 import Profile from "./pages/Profile";
 import SalonOnboarding from "./pages/SalonOnboarding";
 import BookingSuccess from "./pages/BookingSuccess";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/salon-onboarding" element={<SalonOnboarding />} />
             <Route path="/booking-success" element={<BookingSuccess />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
