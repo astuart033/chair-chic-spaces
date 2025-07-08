@@ -54,7 +54,10 @@ export function ProfileHeader({ profile, onImageUpload, onCameraCapture, uploadi
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowCamera(true)}>
+                <DropdownMenuItem onClick={() => {
+                  console.log('Take Photo clicked');
+                  setShowCamera(true);
+                }}>
                   <Camera className="w-4 h-4 mr-2" />
                   Take Photo
                 </DropdownMenuItem>

@@ -16,12 +16,15 @@ export function CameraCapture({ isOpen, onClose, onCapture }: CameraCaptureProps
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const startCamera = useCallback(async () => {
+    console.log('Starting camera with facingMode:', facingMode);
     try {
       // Stop any existing stream first
       if (stream) {
+        console.log('Stopping existing stream');
         stream.getTracks().forEach(track => track.stop());
       }
       
+      console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode,
@@ -30,11 +33,13 @@ export function CameraCapture({ isOpen, onClose, onCapture }: CameraCaptureProps
         }
       });
       
+      console.log('Camera access granted, setting stream');
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         // Wait for video to load before showing
         videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded, starting playback');
           videoRef.current?.play();
         };
       }
