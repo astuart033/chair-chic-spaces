@@ -36,6 +36,27 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [spaceTypeFilter, setSpaceTypeFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  // Popular cities and locations for suggestions
+  const popularLocations = [
+    'Los Angeles, CA',
+    'Miami, FL', 
+    'New York, NY',
+    'Chicago, IL',
+    'Atlanta, GA',
+    'Dallas, TX',
+    'Las Vegas, NV',
+    'Phoenix, AZ',
+    'San Francisco, CA',
+    'Seattle, WA',
+    'Houston, TX',
+    'Denver, CO',
+    'Orlando, FL',
+    'Nashville, TN',
+    'Austin, TX'
+  ];
 
   // Demo listings to show when no real listings exist
   const demoListings: Listing[] = [
@@ -142,6 +163,42 @@ const Index = () => {
     setFilteredListings(filtered);
   }, [searchTerm, spaceTypeFilter, cityFilter, listings]);
 
+  // Handle search input changes and show suggestions
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    
+    if (value.length > 0) {
+      // Combine popular locations with actual listing cities
+      const allLocations = [...popularLocations, ...uniqueCities.map(city => `${city}, ${listings.find(l => l.city === city)?.state || 'US'}`)];
+      const filtered = allLocations.filter(location => 
+        location.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 6); // Limit to 6 suggestions
+      
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+      setSuggestions([]);
+    }
+  };
+
+  // Handle suggestion selection
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchTerm(suggestion);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  // Handle clicking outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowSuggestions(false);
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   const uniqueCities = [...new Set(listings.map(listing => listing.city))];
 
   return (
@@ -159,13 +216,34 @@ const Index = () => {
           
           <div className="flex flex-col md:flex-row gap-4 max-w-4xl mx-auto">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground z-10" />
               <Input
                 placeholder="Search by location or salon name..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
                 className="pl-10 h-12"
+                onClick={(e) => e.stopPropagation()}
               />
+              
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                  {suggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-3 hover:bg-muted cursor-pointer border-b border-border last:border-b-0 flex items-center gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSuggestionClick(suggestion);
+                      }}
+                    >
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <span>{suggestion}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
             <Select value={spaceTypeFilter} onValueChange={setSpaceTypeFilter}>
