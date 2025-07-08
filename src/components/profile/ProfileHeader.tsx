@@ -18,10 +18,11 @@ interface ProfileHeaderProps {
   profile: Profile;
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onCameraCapture: (file: File) => void;
+  onRemoveImage: () => void;
   uploadingImage: boolean;
 }
 
-export function ProfileHeader({ profile, onImageUpload, onCameraCapture, uploadingImage }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, onImageUpload, onCameraCapture, onRemoveImage, uploadingImage }: ProfileHeaderProps) {
   const [showCamera, setShowCamera] = useState(false);
   return (
     <Card>
@@ -54,17 +55,39 @@ export function ProfileHeader({ profile, onImageUpload, onCameraCapture, uploadi
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => {
-                  console.log('Take Photo clicked');
-                  setShowCamera(true);
-                }}>
-                  <Camera className="w-4 h-4 mr-2" />
-                  Take Photo
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.getElementById('profile-image-upload')?.click()}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Image
-                </DropdownMenuItem>
+                {profile.profile_image_url ? (
+                  <>
+                    <DropdownMenuItem onClick={() => {
+                      console.log('Take Photo clicked');
+                      setShowCamera(true);
+                    }}>
+                      <Camera className="w-4 h-4 mr-2" />
+                      Replace with Camera
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => document.getElementById('profile-image-upload')?.click()}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Replace with Upload
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onRemoveImage}>
+                      <Image className="w-4 h-4 mr-2" />
+                      Remove Photo
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem onClick={() => {
+                      console.log('Take Photo clicked');
+                      setShowCamera(true);
+                    }}>
+                      <Camera className="w-4 h-4 mr-2" />
+                      Take Photo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => document.getElementById('profile-image-upload')?.click()}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Image
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
             

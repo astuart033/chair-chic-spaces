@@ -98,9 +98,43 @@ export function useProfileImageUpload({ user, profile, updateProfile }: UseProfi
     await uploadFile(file);
   };
 
+  const removeProfileImage = async () => {
+    if (!user || !profile?.profile_image_url) return;
+
+    setUploadingImage(true);
+
+    try {
+      // Delete the image from storage
+      const oldPath = profile.profile_image_url.split('/').pop();
+      if (oldPath) {
+        await supabase.storage
+          .from('profile-images')
+          .remove([`${user.id}/${oldPath}`]);
+      }
+
+      // Update profile to remove image URL
+      await updateProfile({ profile_image_url: null });
+
+      toast({
+        title: "Profile Picture Removed",
+        description: "Your profile picture has been removed successfully.",
+      });
+    } catch (error: any) {
+      console.error('Error removing image:', error);
+      toast({
+        title: "Remove Failed",
+        description: error.message || "Failed to remove profile picture",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   return {
     uploadingImage,
     handleImageUpload,
     handleCameraCapture,
+    removeProfileImage,
   };
 }
