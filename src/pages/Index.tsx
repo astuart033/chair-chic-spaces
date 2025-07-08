@@ -37,6 +37,49 @@ const Index = () => {
   const [spaceTypeFilter, setSpaceTypeFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
 
+  // Demo listings to show when no real listings exist
+  const demoListings: Listing[] = [
+    {
+      id: 'demo-1',
+      title: 'Premium Salon Chair - Downtown',
+      description: 'Beautiful salon chair in a high-end salon with all amenities included. Perfect for experienced stylists.',
+      space_type: 'chair',
+      price_per_day: 75,
+      price_per_week: 450,
+      city: 'Los Angeles',
+      state: 'CA',
+      amenities: ['WiFi', 'Parking', 'Storage', 'Shampoo Bowl'],
+      images: [],
+      profiles: { full_name: 'Demo Salon Owner' }
+    },
+    {
+      id: 'demo-2',
+      title: 'Private Room with Full Setup',
+      description: 'Spacious private room with professional lighting and premium equipment. Ideal for building your clientele.',
+      space_type: 'private_room',
+      price_per_day: 120,
+      price_per_week: 700,
+      city: 'Miami',
+      state: 'FL',
+      amenities: ['Private Entrance', 'WiFi', 'Storage', 'Reception Area'],
+      images: [],
+      profiles: { full_name: 'Demo Salon Owner' }
+    },
+    {
+      id: 'demo-3',
+      title: 'Modern Booth Space',
+      description: 'Contemporary booth in a trendy salon. Great location with high foot traffic and modern amenities.',
+      space_type: 'booth',
+      price_per_day: 90,
+      price_per_week: 525,
+      city: 'New York',
+      state: 'NY',
+      amenities: ['WiFi', 'Security System', 'Break Room', 'Storage'],
+      images: [],
+      profiles: { full_name: 'Demo Salon Owner' }
+    }
+  ];
+
   const fetchListings = async () => {
     try {
       const { data, error } = await supabase
@@ -51,10 +94,18 @@ const Index = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setListings(data || []);
-      setFilteredListings(data || []);
+      
+      // If no real listings exist, show demo listings
+      const realListings = data || [];
+      const displayListings = realListings.length > 0 ? realListings : demoListings;
+      
+      setListings(displayListings);
+      setFilteredListings(displayListings);
     } catch (error) {
       console.error('Error fetching listings:', error);
+      // On error, still show demo listings so users can see the interface
+      setListings(demoListings);
+      setFilteredListings(demoListings);
       toast({
         title: "Error",
         description: "Failed to load listings",

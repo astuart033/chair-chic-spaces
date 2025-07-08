@@ -45,9 +45,83 @@ export default function ListingDetails() {
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Demo listings for when no real data exists
+  const demoListings: { [key: string]: Listing } = {
+    'demo-1': {
+      id: 'demo-1',
+      title: 'Premium Salon Chair - Downtown',
+      description: 'Beautiful salon chair in a high-end salon with all amenities included. Perfect for experienced stylists looking for a professional workspace in the heart of the city.',
+      space_type: 'chair',
+      price_per_day: 75,
+      price_per_week: 450,
+      address: '123 Main Street',
+      city: 'Los Angeles',
+      state: 'CA',
+      zip_code: '90210',
+      amenities: ['WiFi', 'Parking', 'Storage', 'Shampoo Bowl'],
+      images: [],
+      profiles: {
+        id: 'demo-profile-1',
+        full_name: 'Sarah Johnson',
+        profile_image_url: undefined,
+        bio: 'Professional salon owner with 15+ years experience. I love helping stylists grow their business!'
+      }
+    },
+    'demo-2': {
+      id: 'demo-2',
+      title: 'Private Room with Full Setup',
+      description: 'Spacious private room with professional lighting and premium equipment. Ideal for building your clientele in a luxurious setting with complete privacy.',
+      space_type: 'private_room',
+      price_per_day: 120,
+      price_per_week: 700,
+      address: '456 Ocean Drive',
+      city: 'Miami',
+      state: 'FL',
+      zip_code: '33139',
+      amenities: ['Private Entrance', 'WiFi', 'Storage', 'Reception Area'],
+      images: [],
+      profiles: {
+        id: 'demo-profile-2',
+        full_name: 'Maria Rodriguez',
+        profile_image_url: undefined,
+        bio: 'Boutique salon owner creating beautiful spaces for talented artists.'
+      }
+    },
+    'demo-3': {
+      id: 'demo-3',
+      title: 'Modern Booth Space',
+      description: 'Contemporary booth in a trendy salon. Great location with high foot traffic and modern amenities. Perfect for stylists who want to be part of a vibrant salon community.',
+      space_type: 'booth',
+      price_per_day: 90,
+      price_per_week: 525,
+      address: '789 Fashion Ave',
+      city: 'New York',
+      state: 'NY',
+      zip_code: '10001',
+      amenities: ['WiFi', 'Security System', 'Break Room', 'Storage'],
+      images: [],
+      profiles: {
+        id: 'demo-profile-3',
+        full_name: 'Alex Chen',
+        profile_image_url: undefined,
+        bio: 'Modern salon owner passionate about creating inspiring workspaces.'
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchListing = async () => {
       try {
+        // Check if this is a demo listing
+        if (id && id.startsWith('demo-')) {
+          const demoListing = demoListings[id];
+          if (demoListing) {
+            setListing(demoListing);
+            setLoading(false);
+            return;
+          }
+        }
+
         const { data, error } = await supabase
           .from('listings')
           .select(`
@@ -92,6 +166,16 @@ export default function ListingDetails() {
         title: "Not Available",
         description: "Salon owners cannot book spaces. Switch to a renter account to book.",
         variant: "destructive",
+      });
+      return;
+    }
+    
+    // Handle demo listings
+    if (id && id.startsWith('demo-')) {
+      toast({
+        title: "Demo Listing",
+        description: "This is a sample listing to show you how ShearSpace works. Real bookings will be available once salon owners start listing their spaces!",
+        variant: "default",
       });
       return;
     }
