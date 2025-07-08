@@ -16,9 +16,8 @@ interface UseProfileImageUploadProps {
 export function useProfileImageUpload({ user, profile, updateProfile }: UseProfileImageUploadProps) {
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
+  const uploadFile = async (file: File) => {
+    if (!user) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -88,8 +87,20 @@ export function useProfileImageUpload({ user, profile, updateProfile }: UseProfi
     }
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      await uploadFile(file);
+    }
+  };
+
+  const handleCameraCapture = async (file: File) => {
+    await uploadFile(file);
+  };
+
   return {
     uploadingImage,
     handleImageUpload,
+    handleCameraCapture,
   };
 }

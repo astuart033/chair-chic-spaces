@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Mail } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Camera, Mail, Upload, Image } from 'lucide-react';
+import { CameraCapture } from './CameraCapture';
 
 interface Profile {
   full_name: string;
@@ -14,10 +17,12 @@ interface Profile {
 interface ProfileHeaderProps {
   profile: Profile;
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onCameraCapture: (file: File) => void;
   uploadingImage: boolean;
 }
 
-export function ProfileHeader({ profile, onImageUpload, uploadingImage }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, onImageUpload, onCameraCapture, uploadingImage }: ProfileHeaderProps) {
+  const [showCamera, setShowCamera] = useState(false);
   return (
     <Card>
       <CardContent className="pt-6">
@@ -36,15 +41,35 @@ export function ProfileHeader({ profile, onImageUpload, uploadingImage }: Profil
               onChange={onImageUpload}
               className="hidden"
             />
-            <Button
-              size="sm"
-              variant="secondary"
-              className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full p-0"
-              onClick={() => document.getElementById('profile-image-upload')?.click()}
-              disabled={uploadingImage}
-            >
-              <Camera className="w-4 h-4" />
-            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full p-0"
+                  disabled={uploadingImage}
+                >
+                  <Camera className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowCamera(true)}>
+                  <Camera className="w-4 h-4 mr-2" />
+                  Take Photo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => document.getElementById('profile-image-upload')?.click()}>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Image
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <CameraCapture
+              isOpen={showCamera}
+              onClose={() => setShowCamera(false)}
+              onCapture={onCameraCapture}
+            />
           </div>
           
           <div className="flex-1">

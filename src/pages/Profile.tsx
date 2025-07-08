@@ -18,7 +18,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [switchingType, setSwitchingType] = useState(false);
 
-  const { uploadingImage, handleImageUpload } = useProfileImageUpload({
+  const { uploadingImage, handleImageUpload, handleCameraCapture } = useProfileImageUpload({
     user,
     profile,
     updateProfile,
@@ -117,6 +117,7 @@ export default function Profile() {
             <ProfileHeader 
               profile={profile}
               onImageUpload={handleImageUpload}
+              onCameraCapture={handleCameraCapture}
               uploadingImage={uploadingImage}
             />
 
