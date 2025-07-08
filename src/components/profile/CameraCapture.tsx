@@ -116,7 +116,8 @@ export function CameraCapture({ isOpen, onClose, onCapture }: CameraCaptureProps
               autoPlay
               playsInline
               muted
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover bg-black"
+              style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
             />
             
             {/* Camera controls overlay */}
