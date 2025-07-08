@@ -196,7 +196,14 @@ const Index = () => {
             </div>
           ) : filteredListings.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground text-lg">No spaces found matching your criteria.</p>
+              <p className="text-muted-foreground text-lg">
+                {searchTerm || cityFilter !== 'all' || spaceTypeFilter !== 'all' 
+                  ? "No spaces here yet - but they're coming soon!" 
+                  : "No spaces available yet"}
+              </p>
+              <p className="text-muted-foreground text-sm mt-2">
+                Be the first to know when spaces become available in your area.
+              </p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
