@@ -17,6 +17,11 @@ export function CameraCapture({ isOpen, onClose, onCapture }: CameraCaptureProps
 
   const startCamera = useCallback(async () => {
     try {
+      // Stop any existing stream first
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode,
@@ -28,11 +33,16 @@ export function CameraCapture({ isOpen, onClose, onCapture }: CameraCaptureProps
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Wait for video to load before showing
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+        };
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
+      alert('Camera access denied or not available');
     }
-  }, [facingMode]);
+  }, [facingMode, stream]);
 
   const stopCamera = useCallback(() => {
     if (stream) {
@@ -91,13 +101,10 @@ export function CameraCapture({ isOpen, onClose, onCapture }: CameraCaptureProps
 
   // Restart camera when facing mode changes
   useEffect(() => {
-    if (isOpen && stream && facingMode) {
-      stopCamera();
-      // Longer timeout to prevent flashing
-      const timeoutId = setTimeout(startCamera, 300);
-      return () => clearTimeout(timeoutId);
+    if (isOpen && facingMode) {
+      startCamera();
     }
-  }, [facingMode]);
+  }, [facingMode, isOpen, startCamera]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
