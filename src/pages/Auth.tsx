@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Scissors } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -16,6 +17,7 @@ export default function Auth() {
   const [fullName, setFullName] = useState('');
   const [userType, setUserType] = useState<'salon_owner' | 'renter'>('renter');
   const [loading, setLoading] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +27,17 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isSignUp) {
+      if (resetMode) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+        if (error) throw error;
+        toast({
+          title: "Password reset email sent!",
+          description: "Check your email for the password reset link.",
+        });
+        setResetMode(false);
+      } else if (isSignUp) {
         const { error } = await signUp(email, password, { full_name: fullName, user_type: userType });
         if (error) throw error;
         toast({
@@ -60,17 +72,22 @@ export default function Auth() {
         
         <Card>
           <CardHeader>
-            <CardTitle>{isSignUp ? 'Create Account' : 'Sign In'}</CardTitle>
+            <CardTitle>
+              {resetMode ? 'Reset Password' : (isSignUp ? 'Create Account' : 'Sign In')}
+            </CardTitle>
             <CardDescription>
-              {isSignUp 
-                ? 'Join ShearSpace to start booking spaces or listing your salon'
-                : 'Welcome back to ShearSpace'
+              {resetMode 
+                ? 'Enter your email to receive a password reset link'
+                : (isSignUp 
+                  ? 'Join ShearSpace to start booking spaces or listing your salon'
+                  : 'Welcome back to ShearSpace'
+                )
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignUp && (
+              {isSignUp && !resetMode && (
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>
@@ -110,32 +127,49 @@ export default function Auth() {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
+              {!resetMode && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
               
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                {loading ? 'Loading...' : 
+                 resetMode ? 'Send Reset Email' :
+                 (isSignUp ? 'Create Account' : 'Sign In')}
               </Button>
             </form>
             
-            <div className="mt-4 text-center">
+            <div className="mt-4 text-center space-y-2">
+              {!resetMode && (
+                <Button
+                  variant="link"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="text-sm"
+                >
+                  {isSignUp 
+                    ? 'Already have an account? Sign in'
+                    : "Don't have an account? Sign up"
+                  }
+                </Button>
+              )}
+              
               <Button
                 variant="link"
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => {
+                  setResetMode(!resetMode);
+                  setIsSignUp(false);
+                }}
                 className="text-sm"
               >
-                {isSignUp 
-                  ? 'Already have an account? Sign in'
-                  : "Don't have an account? Sign up"
-                }
+                {resetMode ? 'Back to sign in' : 'Forgot your password?'}
               </Button>
             </div>
           </CardContent>
