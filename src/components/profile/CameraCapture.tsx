@@ -91,11 +91,13 @@ export function CameraCapture({ isOpen, onClose, onCapture }: CameraCaptureProps
 
   // Restart camera when facing mode changes
   useEffect(() => {
-    if (isOpen && stream) {
+    if (isOpen && stream && facingMode) {
       stopCamera();
-      setTimeout(startCamera, 100);
+      // Longer timeout to prevent flashing
+      const timeoutId = setTimeout(startCamera, 300);
+      return () => clearTimeout(timeoutId);
     }
-  }, [facingMode, isOpen, stream, stopCamera, startCamera]);
+  }, [facingMode]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
